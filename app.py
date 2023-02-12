@@ -1,14 +1,17 @@
 import uuid
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_smorest import Api
-
+from flask_jwt_extended import JWTManager
 from db import db
 import models
+import secrets
 
 from Resources.stores import blp as StoreBP
 from Resources.items import blp as ItemsBP
 from Resources.tag import blp as TagsBP
+from Resources.user import blp as UsersBP
+from blocklist import BLOCKLIST
 
 # create_app function is the application factory function
 def create_app(db_url=None):
@@ -28,6 +31,74 @@ def create_app(db_url=None):
 
     api = Api(app)
 
+    # Normally you would like to store a constant secret - since this means
+    # that the secret will be changed each time the app is re run
+    app.config["JWT_SECRET_KEY"] = "whatever"
+    #app.secret_key = "whatever"
+    jwt = JWTManager(app)
+
+    @jwt.additional_claims_loader
+    def add_claims_to_jwt(identity):
+        # TODO: Read from a config file instead of hard-coding
+        if identity == 1: # identity is user number 1 as id
+            return {"is_admin": True}
+        return {"is_admin": False}
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        return jwt_payload["jti"] in BLOCKLIST
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify({"message": "The token has expired.", "error": "token_expired"}),
+            401,
+        )
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return (
+            jsonify(
+                {"message": "Signature verification failed.", "error": "invalid_token"}
+            ),
+            401,
+        )
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return (
+            jsonify(
+                {
+                    "description": "Request does not contain an access token.",
+                    "error": "authorization_required",
+                }
+            ),
+            401,
+        )
+
+    @jwt.needs_fresh_token_loader
+    def token_not_fresh_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {
+                    "description": "The token is not fresh.",
+                    "error": "fresh_token_required",
+                }
+            ),
+            401,
+        )
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {"description": "The token has been revoked.", "error": "token_revoked"}
+            ),
+            401,
+        )
+
+    # JWT configuration ends
+
     @app.before_first_request
     def create_tables():
         db.create_all()
@@ -35,6 +106,7 @@ def create_app(db_url=None):
     api.register_blueprint(StoreBP)
     api.register_blueprint(ItemsBP)
     api.register_blueprint(TagsBP)
+    api.register_blueprint(UsersBP)
 
     return app
 

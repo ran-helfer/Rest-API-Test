@@ -1,5 +1,5 @@
-import uuid
 from flask import request
+from flask_jwt_extended import jwt_required
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from schemas import ItemSchema, UpdateItemSchema
@@ -25,6 +25,7 @@ class Items(MethodView):
             abort(500, message="An error occured while trying to save")
         return item, 201
 
+    @jwt_required(())
     @blp.response(200, ItemSchema(many=True))
     def get(self):
         return ItemModel.query.all()
@@ -32,7 +33,7 @@ class Items(MethodView):
     # return {"items": list(items.values())}
 
 
-@blp.route("/items/<string:item_id>")
+@blp.route("/items/<int:item_id>")
 class Item(MethodView):
 
     @blp.response(200, ItemSchema)
