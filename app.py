@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from db import db
 import models
 import secrets
+from flask_migrate import Migrate
 
 from Resources.stores import blp as StoreBP
 from Resources.items import blp as ItemsBP
@@ -28,7 +29,7 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
-
+    migrate = Migrate(app, db)
     api = Api(app)
 
     # Normally you would like to store a constant secret - since this means
@@ -99,9 +100,9 @@ def create_app(db_url=None):
 
     # JWT configuration ends
 
-    @app.before_first_request
-    def create_tables():
-        db.create_all()
+    # @app.before_first_request
+    # def create_tables():
+    #     db.create_all()
 
     api.register_blueprint(StoreBP)
     api.register_blueprint(ItemsBP)
