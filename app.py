@@ -29,6 +29,7 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
+
     api = Api(app)
 
     # Normally you would like to store a constant secret - since this means
