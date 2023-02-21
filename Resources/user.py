@@ -16,6 +16,7 @@ class UserRegister(MethodView):
 
     @blp.arguments(UserSchema)
     def post(self, user_data):    # user_data is the dictionary sent
+        print("i am here !!!!")
         if UserModel.query.filter(UserModel.username == user_data["username"]).first():
             abort(409, message="Such user exist")
         user = UserModel(
@@ -25,13 +26,14 @@ class UserRegister(MethodView):
         db.session.add(user)
         db.session.commit()
 
-        return { "message" : "User created successfully." }, 201
+        return {"message": "User created successfully."}, 201
 
 
 @blp.route("/login")
 class UserLogin(MethodView):
     @blp.arguments(UserSchema)
     def post(self, user_data):
+        print("user data")
         user = UserModel.query.filter(UserModel.username == user_data["username"]).first()
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
             access_token = create_access_token(identity=user.id)
