@@ -1,1 +1,31 @@
 Single-database configuration for Flask.
+
+
+# Build docker image:
+docker build -t my-rest-api .
+
+# For debugging container locally while changes reflected within the container run:
+docker run -dp 5001:5000 -w /app -v "$(pwd):/app"  my-rest-api
+
+# Docker delete image:
+docker image rm -f   <Image id>
+
+# --> And then it gives such id:
+79871d697afba3523b8a70d73f138615fdde56281ec02442543ed4c89d2059fa
+
+# To initialize flask migrate
+flask db init
+
+# At the app file we have:
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db")
+
+# Before migration, delete your
+data.db   # (terminal or Sourcetree) #
+
+# And then, To migrate data base with Flask migrate and Alemby, delete the database or drop tables (?) and then:
+flask db migrate
+
+# This command will create a new file and to apply the migration to the extended model
+flask db upgrade
+
+
