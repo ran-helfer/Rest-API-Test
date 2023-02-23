@@ -11,3 +11,4 @@ setuptools~=65.6.3
 SQLAlchemy~=1.4.46
 passlib
 flask-migrate
+gunicorn
